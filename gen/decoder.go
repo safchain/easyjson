@@ -322,12 +322,12 @@ func (g *Generator) genRequiredFieldCheck(t reflect.Type, f reflect.StructField)
 
 func mergeStructFields(fields1, fields2 []reflect.StructField) (fields []reflect.StructField) {
 	used := map[string]bool{}
-	for _, f := range fields2 {
+	for _, f := range fields1 {
 		used[f.Name] = true
 		fields = append(fields, f)
 	}
 
-	for _, f := range fields1 {
+	for _, f := range fields2 {
 		if !used[f.Name] {
 			fields = append(fields, f)
 		}
@@ -344,6 +344,10 @@ func getStructFields(t reflect.Type) ([]reflect.StructField, error) {
 	for i := 0; i < t.NumField(); i++ {
 		f := t.Field(i)
 		if !f.Anonymous {
+			c := []rune(f.Name)[0]
+			if unicode.IsUpper(c) {
+				efields = append(efields, f)
+			}
 			continue
 		}
 
@@ -359,19 +363,7 @@ func getStructFields(t reflect.Type) ([]reflect.StructField, error) {
 		efields = mergeStructFields(efields, fs)
 	}
 
-	var fields []reflect.StructField
-	for i := 0; i < t.NumField(); i++ {
-		f := t.Field(i)
-		if f.Anonymous {
-			continue
-		}
-
-		c := []rune(f.Name)[0]
-		if unicode.IsUpper(c) {
-			fields = append(fields, f)
-		}
-	}
-	return mergeStructFields(efields, fields), nil
+	return efields, nil
 }
 
 func (g *Generator) genDecoder(t reflect.Type) error {
